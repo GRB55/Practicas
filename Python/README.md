@@ -1,137 +1,132 @@
 # ¡Bienvenidos a la sección de Python!
-Aquí verán prácticas/proyectos pequeños en mi actual paso como estudiante en ciencia de datos.
+Aquí encontrarás una colección de proyectos y prácticas que reflejan mi progreso como estudiante de Ciencia de Datos. Estos proyectos cubren una variedad de técnicas y herramientas que me han permitido aplicar análisis, modelado y visualización en diferentes contextos. ¡Espero que encuentres estas prácticas interesantes y útiles!
 
 ## BREVE DESCRIPCIÓN
 
-### ANÁLISIS DE FORMULA 1
-Práctica si mal no recuerdo basada en el canal del youtuber Keith Galli.
+### Análisis Exploratorio
+
+#### ANÁLISIS DE FORMULA 1
 Herramientas:
 - Numpy
 - Pandas
 - Matplotlib
 - Seaborn
 
-En ella pudimos obtener información como:
-- Velocidad máxima en los circuitos a través de los años
-- Pilotos más ganadores en cuanto a carreras
-- Equipos más ganadores en cuanto a carreras
-- Comparación de la definición de los campeonatos de 1988 y 1989
+En este proyecto, exploré datos históricos de Fórmula 1 para entender tendencias clave. Logré:
+- Identificar patrones de velocidad máxima en circuitos a lo largo de los años.
+- Determinar los pilotos y equipos más exitosos según sus victorias en carreras.
+- Comparar eventos históricos, como las definiciones de campeonato en 1988 y 1989, utilizando visualizaciones claras.
 
-### ANÁLISIS DE NETFLIX
-Herramientas:
-- Numpy
-- Pandas
-- Matplotlib
-- Seaborn
-  
-En ella pudimos obtener información como:
-- Como está dividido el contenido en la plataforma y en los países
-- Años en los que se agregaron contenido
-- Directores más frecuentes
-- Géneros más frecuentes
-- Clasificaciones por edades más frecuentes
-- Contenido más antiguo
-- Contenido por países
-- Promedio de la duración de las películas
-- Categorias de contenido más frecuentes
+---
 
-### ANÁLISIS DE VENTAS
-Herramientas:
-- Numpy
-- Pandas
-- Matplotlib
-- Seaborn
-  
-Se realizó limpieza y transformación de los datos para posterior análisis, por ejemplo:
-- Evaluar y manejar los valores nulos
-- Transformar columnas a su formato correcto
-- Crear columnas a partir de las columnas que ya tenemos
-
-En el análisis vimos:
-- Ventas mensuales
-- Ventas por ciudad
-- Cantidad de productos vendidos por ciudad
-- Ventas a través de las 24 horas del día
-- Frecuencia de productos vendidos en conjunto
-- Cantidad de productos vendidos
-- Media de precios
-
-### BREAST KMEANS
-Herramientas:
-- Numpy
-- Pandas
-- Matplotlib
-- Seaborn
-- Scikit learn
-- Warnings
-
-En el Notebook realizamos:
-- EDA
-- Feature scaling
-- Método del codo para DBSCAN
-- Método de la silueta
-- DBSCAN para detección de outliers
-- Método del codo para elegir un k óptimo
-- Método de davies-bouldin para elegir un k óptimo
-- Método de calinski-harabasz para elegir un k óptimo
-- Modelado utilizando el algoritmo KMEANS
-- PCA para observar los 2 componentes principales
-
-### BREAST KNN
-Herramientas:
-- Numpy
-- Pandas
-- Matplotlib
-- Seaborn
-- Scikit learn
-- Warnings
-
-En el Notebook realizamos:
-- EDA
-- Dividir los datos en train y test
-- Feature engineering
-- Feature scaling
-- Modelado utilizando el algoritmo KNeighborsClassifier
-- Métricas del modelo
-- PCA para observar los 2 componentes principales
-
-### SUPERMERCADO
+#### ANÁLISIS DE NETFLIX
 Herramientas:
 - Numpy
 - Pandas
 - Matplotlib
 - Seaborn
 
-En el análisis vimos:
-- Ciudades y sus frecuencias
-- Gastos en base al género y tipo de consumidor (miembro o normal)
-- Cantidad de productos llevados por género y tipo de consumidor (miembro o normal)
-- Líneas de productos más frecuentes en ambos géneros
-- Medios de pago utilizados y su distribución en base a precio y cantidad comprada
-- Medios de pago utilizados por género
-- Ventas semanales
-- Promedio de rating por género y ciudad
-- Promedio de rating de las líneas de productos
-- Rating por tipo de consumidor
-- Ganancias por ciudad
+Exploré la base de datos de contenido de Netflix y obtuve insights como:
+- Cómo está distribuido el contenido por categorías, países y años.
+- Directores y géneros más frecuentes.
+- Clasificaciones por edades más comunes.
+- Contenido más antiguo y su duración promedio.
 
-### WINE KMEANS
+---
+
+#### ANÁLISIS DE VENTAS
 Herramientas:
 - Numpy
 - Pandas
 - Matplotlib
 - Seaborn
-- Scikit learn
-- Warnings
 
-En el Notebook realizamos:
-- EDA
-- Feature scaling
-- Método del codo para DBSCAN
-- Método de la silueta
-- DBSCAN para detección de outliers
-- Método del codo para elegir un k óptimo
-- Método de davies-bouldin para elegir un k óptimo
-- Método de calinski-harabasz para elegir un k óptimo
-- Modelado utilizando el algoritmo KMEANS
-- PCA para observar los 2 componentes principales
+En este análisis, trabajé con datos de ventas para realizar una limpieza y transformación previa que incluyó:
+- Evaluar y manejar valores nulos.
+- Formatear columnas correctamente.
+- Crear nuevas columnas basadas en las existentes.
+
+Resultados obtenidos:
+- Ventas mensuales y por ciudad.
+- Frecuencia de productos vendidos en conjunto.
+- Análisis de ventas a lo largo de las 24 horas del día.
+
+---
+
+#### SUPERMERCADO
+Herramientas:
+- Numpy
+- Pandas
+- Matplotlib
+- Seaborn
+
+En este proyecto, analicé datos de un supermercado y logré:
+- Identificar las líneas de productos más populares.
+- Analizar gastos y cantidad de productos llevados según género y tipo de consumidor.
+- Observar la distribución de medios de pago y sus relaciones con precios y cantidades compradas.
+- Obtener métricas como promedio de rating por género, ciudad y línea de productos.
+
+---
+
+### Modelado y Clustering
+
+#### BREAST KMEANS
+Herramientas:
+- Numpy
+- Pandas
+- Matplotlib
+- Seaborn
+- Scikit-learn
+
+Realicé un análisis detallado utilizando clustering. Los pasos principales incluyeron:
+- Exploración de datos (EDA).
+- Escalado de características.
+- Selección de parámetros óptimos para KMeans utilizando:
+  - Método del codo.
+  - Silueta.
+  - Davies-Bouldin.
+  - Calinski-Harabasz.
+- Identificación de outliers con DBSCAN.
+- Reducción de dimensionalidad con PCA para visualización.
+
+---
+
+#### WINE KMEANS
+Herramientas:
+- Numpy
+- Pandas
+- Matplotlib
+- Seaborn
+- Scikit-learn
+
+Un enfoque similar al proyecto anterior, pero aplicado a datos de vinos. Logré:
+- Detectar outliers con DBSCAN.
+- Determinar el número óptimo de clusters.
+- Modelar los datos con KMeans y visualizar los resultados con PCA.
+
+---
+
+### Clasificación
+
+#### BREAST KNN
+Herramientas:
+- Numpy
+- Pandas
+- Matplotlib
+- Seaborn
+- Scikit-learn
+
+Trabajé en un modelo de clasificación utilizando KNeighborsClassifier. Actividades principales:
+- División de los datos en conjuntos de entrenamiento y prueba.
+- Ingeniería y escalado de características.
+- Evaluación del modelo con métricas de desempeño.
+- Visualización de componentes principales con PCA.
+
+---
+
+## Próximos pasos
+Planeo continuar aprendiendo técnicas avanzadas de Machine Learning, como Gradient Boosting y Deep Learning, e integrar estas habilidades en futuros proyectos para resolver problemas más complejos.
+
+---
+
+¡Gracias por revisar mis proyectos! Si tienes alguna sugerencia o pregunta, no dudes en contactarme. 😊
