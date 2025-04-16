@@ -1,5 +1,5 @@
-# ¡Bienvenidos a las prácticas en R!
-Aquí verán prácticas/proyectos pequeños en mi actual paso como estudiante en ciencia de datos.
+# ¡Bienvenidos a la sección de R!
+Aquí encontrarás una colección de proyectos y prácticas que reflejan mi progreso como estudiante de Ciencia de Datos. Estos proyectos cubren una variedad de técnicas y herramientas que me han permitido aplicar análisis, modelado y visualización en diferentes contextos. ¡Espero que encuentres estas prácticas interesantes y útiles!
 
 ## Archivos incluidos
 
