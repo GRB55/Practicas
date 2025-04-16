@@ -5,72 +5,76 @@ Aquí encontrarás una colección de proyectos y prácticas que reflejan mi prog
 
 ### Análisis Exploratorio
 
-#### ANÁLISIS DE FORMULA 1
+### **ANÁLISIS DE FORMULA 1**  
+Archivo: `ANALISIS DE FORMULA1.ipynb`  
 Herramientas:
 - Numpy
 - Pandas
 - Matplotlib
 - Seaborn
 
-En este proyecto, exploré datos históricos de Fórmula 1 para entender tendencias clave. Logré:
-- Identificar patrones de velocidad máxima en circuitos a lo largo de los años.
-- Determinar los pilotos y equipos más exitosos según sus victorias en carreras.
-- Comparar eventos históricos, como las definiciones de campeonato en 1988 y 1989, utilizando visualizaciones claras.
+Descripción:
+Este análisis explora datos históricos de Fórmula 1 para identificar tendencias y patrones relevantes.  
+Incluye:
+- Análisis de la evolución de la velocidad máxima en circuitos a lo largo de los años.
+- Identificación de pilotos y equipos más exitosos en cuanto a victorias.
+- Comparación histórica de campeonatos, como los de 1988 y 1989.
 
 ---
 
-#### ANÁLISIS DE NETFLIX
+### **ANÁLISIS DE NETFLIX**  
+Archivo: `ANALISIS DE NETFLIX.ipynb`  
 Herramientas:
 - Numpy
 - Pandas
 - Matplotlib
 - Seaborn
 
-Exploré la base de datos de contenido de Netflix y obtuve insights como:
-- Cómo está distribuido el contenido por categorías, países y años.
-- Directores y géneros más frecuentes.
-- Clasificaciones por edades más comunes.
-- Contenido más antiguo y su duración promedio.
+Descripción:
+Exploración de datos del catálogo de Netflix, con insights sobre su contenido.  
+Incluye:
+- Distribución del contenido por categorías y países.
+- Análisis de directores, géneros y clasificaciones por edades.
+- Identificación del contenido más antiguo y su duración promedio.
 
 ---
 
-#### ANÁLISIS DE VENTAS
+### **ANÁLISIS DE VENTAS**  
+Archivo: `Analisis ventas.ipynb`  
 Herramientas:
 - Numpy
 - Pandas
 - Matplotlib
 - Seaborn
 
-En este análisis, trabajé con datos de ventas para realizar una limpieza y transformación previa que incluyó:
-- Evaluar y manejar valores nulos.
-- Formatear columnas correctamente.
-- Crear nuevas columnas basadas en las existentes.
-
-Resultados obtenidos:
+Descripción:
+Análisis detallado de datos de ventas, con enfoque en la limpieza y transformación de datos para facilitar su interpretación.  
+Incluye:
 - Ventas mensuales y por ciudad.
 - Frecuencia de productos vendidos en conjunto.
 - Análisis de ventas a lo largo de las 24 horas del día.
 
 ---
 
-#### SUPERMERCADO
+### **ANÁLISIS DE SUPERMERCADO**  
+Archivo: `SUPERMERCADO.ipynb`  
 Herramientas:
 - Numpy
 - Pandas
 - Matplotlib
 - Seaborn
 
-En este proyecto, analicé datos de un supermercado y logré:
-- Identificar las líneas de productos más populares.
-- Analizar gastos y cantidad de productos llevados según género y tipo de consumidor.
-- Observar la distribución de medios de pago y sus relaciones con precios y cantidades compradas.
-- Obtener métricas como promedio de rating por género, ciudad y línea de productos.
+Descripción:
+Análisis de datos de un supermercado para obtener insights comerciales.  
+Incluye:
+- Líneas de productos más populares por género y tipo de consumidor.
+- Distribución de medios de pago según precios y cantidades compradas.
+- Promedios de rating y ganancias por ciudad.
 
 ---
 
-### Modelado y Clustering
-
-#### BREAST KMEANS
+### **BREAST KMEANS PRACTICE**  
+Archivo: `BREAST KMEANS PRACTICE.ipynb`  
 Herramientas:
 - Numpy
 - Pandas
@@ -78,20 +82,18 @@ Herramientas:
 - Seaborn
 - Scikit-learn
 
-Realicé un análisis detallado utilizando clustering. Los pasos principales incluyeron:
-- Exploración de datos (EDA).
+Descripción:
+Clustering aplicado a datos de cáncer de mama para identificar patrones ocultos.  
+Incluye:
 - Escalado de características.
-- Selección de parámetros óptimos para KMeans utilizando:
-  - Método del codo.
-  - Silueta.
-  - Davies-Bouldin.
-  - Calinski-Harabasz.
+- Selección de parámetros óptimos para KMeans mediante métricas como el método del codo y la silueta.
 - Identificación de outliers con DBSCAN.
-- Reducción de dimensionalidad con PCA para visualización.
+- Visualización con PCA.
 
 ---
 
-#### WINE KMEANS
+### **BREAST KNN PRACTICE**  
+Archivo: `BREAST KNN PRACTICE.ipynb`  
 Herramientas:
 - Numpy
 - Pandas
@@ -99,28 +101,30 @@ Herramientas:
 - Seaborn
 - Scikit-learn
 
-Un enfoque similar al proyecto anterior, pero aplicado a datos de vinos. Logré:
-- Detectar outliers con DBSCAN.
-- Determinar el número óptimo de clusters.
-- Modelar los datos con KMeans y visualizar los resultados con PCA.
-
----
-
-### Clasificación
-
-#### BREAST KNN
-Herramientas:
-- Numpy
-- Pandas
-- Matplotlib
-- Seaborn
-- Scikit-learn
-
-Trabajé en un modelo de clasificación utilizando KNeighborsClassifier. Actividades principales:
-- División de los datos en conjuntos de entrenamiento y prueba.
+Descripción:
+Modelo de clasificación utilizando KNeighborsClassifier aplicado a datos médicos.  
+Incluye:
 - Ingeniería y escalado de características.
-- Evaluación del modelo con métricas de desempeño.
+- Evaluación del modelo con métricas clave.
 - Visualización de componentes principales con PCA.
+
+---
+
+### **WINE KMEANS PRACTICE**  
+Archivo: `WINE KMEANS PRACTICE.ipynb`  
+Herramientas:
+- Numpy
+- Pandas
+- Matplotlib
+- Seaborn
+- Scikit-learn
+
+Descripción:
+Clustering aplicado a datos de vinos para segmentarlos en grupos significativos.  
+Incluye:
+- Selección del número óptimo de clusters con métricas como Davies-Bouldin y Calinski-Harabasz.
+- Identificación de outliers con DBSCAN.
+- Visualización con PCA.
 
 ---
 
