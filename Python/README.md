@@ -10,6 +10,7 @@ Herramientas:
 - Pandas
 - Matplotlib
 - Seaborn
+
 En ella pudimos obtener información como:
 - Velocidad máxima en los circuitos a través de los años
 - Pilotos más ganadores en cuanto a carreras
@@ -22,6 +23,7 @@ Herramientas:
 - Pandas
 - Matplotlib
 - Seaborn
+  
 En ella pudimos obtener información como:
 - Como está dividido el contenido en la plataforma y en los países
 - Años en los que se agregaron contenido
@@ -39,10 +41,12 @@ Herramientas:
 - Pandas
 - Matplotlib
 - Seaborn
+  
 Se realizó limpieza y transformación de los datos para posterior análisis, por ejemplo:
 - Evaluar y manejar los valores nulos
 - Transformar columnas a su formato correcto
 - Crear columnas a partir de las columnas que ya tenemos
+
 En el análisis vimos:
 - Ventas mensuales
 - Ventas por ciudad
@@ -60,6 +64,7 @@ Herramientas:
 - Seaborn
 - Scikit learn
 - Warnings
+
 En el Notebook realizamos:
 - EDA
 - Feature scaling
@@ -80,6 +85,7 @@ Herramientas:
 - Seaborn
 - Scikit learn
 - Warnings
+
 En el Notebook realizamos:
 - EDA
 - Dividir los datos en train y test
@@ -95,6 +101,7 @@ Herramientas:
 - Pandas
 - Matplotlib
 - Seaborn
+
 En el análisis vimos:
 - Ciudades y sus frecuencias
 - Gastos en base al género y tipo de consumidor (miembro o normal)
@@ -116,6 +123,7 @@ Herramientas:
 - Seaborn
 - Scikit learn
 - Warnings
+
 En el Notebook realizamos:
 - EDA
 - Feature scaling
