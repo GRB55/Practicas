@@ -1,0 +1,320 @@
+---
+title: "Arboles de Decision"
+author: "Gonzalo Ríos Barceló"
+output: html_notebook
+---
+
+### DATASET ADULT CENSUS INCOME DE KAGGLE
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+adult_df <- read_csv("C:\\Users\\Educa informatica\\Desktop\\CIENCIAS DE DATOS\\CSV, EXCELS, ETC\\archivos csv\\adult.csv", show_col_types = FALSE)
+```
+
+### EDA
+
+```{r}
+head(adult_df)
+```
+
+```{r}
+str(adult_df)
+```
+
+```{r}
+summary(adult_df)
+```
+
+```{r}
+dim(adult_df)
+sum(is.na(adult_df))
+```
+
+```{r}
+hist(adult_df$age, col = "skyblue", breaks = 50)
+```
+
+```{r}
+table(adult_df$workclass)
+```
+
+```{r}
+table(adult_df$occupation)
+```
+
+```{r}
+table(adult_df$education)
+```
+
+```{r}
+table(adult_df$sex)
+```
+
+```{r}
+table(adult_df$relationship)
+```
+
+```{r}
+table(adult_df$marital.status)
+```
+
+```{r}
+table(adult_df$race)
+```
+
+```{r}
+table(adult_df$native.country)
+```
+
+### Distribucion variable target
+
+```{r}
+table(adult_df$income)
+prop.table(table(adult_df$income))
+```
+
+```{r}
+colSums(adult_df == "?") / nrow(adult_df)
+```
+
+Como vimos en varias columnas tenemos el valor "?", por lo que probaremos varias formas de tratar con este valor. Por ejemplo eliminando directamente las filas que lo contienen o estableciendo valores 0/NULL y evaluando el modelo. O cambiando los valores por media/mediana/moda, dependiendo el tipo de variable.
+
+```{r}
+adult_filtered <- adult_df
+```
+
+### Para usar la funcion Mode() debemos importar DescTools
+
+```{r}
+library(DescTools)
+adult_filtered <- adult_filtered %>%
+  mutate(workclass = ifelse(workclass=="?", Mode(workclass), workclass),
+         occupation = ifelse(occupation=="?", Mode(occupation), occupation),
+         native.country = ifelse(native.country=="?", Mode(native.country), native.country)
+         )
+colSums(adult_filtered == "?")
+```
+
+```{r}
+adult_df2 <- adult_df %>%
+  filter(workclass != "?", occupation != "?", native.country != "?")
+
+colSums(adult_df2 == "?")
+```
+
+Ahora tengo 3 conjuntos de datos: adult_df con los datos originales sin modificar. adult_df2 sin las filas que contienen valores iguales a "?" y adult_filtered donde se cambiaron los valores "?" por la moda de la columna. Resta evaluar con cada dataset y ver como nos va.
+
+## Arbol de decision con adult_df
+
+```{r}
+library(rpart)
+library(rpart.plot)
+library(caret)
+```
+
+### Establecer como factor la variable target
+
+```{r}
+adult_df <- adult_df %>%
+  mutate_at("income", factor)
+adult_df
+```
+
+### Datos de entrenamiento
+
+```{r}
+set.seed(1)
+adult_training <- sample_frac(adult_df, .7)
+```
+
+### Datos de testeo
+
+```{r}
+adult_testing <- anti_join(adult_df, adult_training)
+```
+
+### Entrenar el modelo
+
+```{r}
+adult_tree <- rpart(formula = income~., data=adult_training)
+```
+
+### Evaluar el modelo
+
+```{r}
+adult_tree
+```
+
+### Grafico del modelo
+
+```{r}
+rpart.plot(adult_tree)
+```
+
+### Primera predict
+
+```{r}
+prediccion_1 <- predict(adult_tree, newdata = adult_testing, type = "class")
+```
+
+### Matriz de confusion
+
+```{r}
+confusionMatrix(prediccion_1, adult_testing[["income"]])
+```
+
+### SEGUNDO ARBOL
+
+```{r}
+adult_df <- adult_df %>%
+  filter(native.country != "Holand-Netherlands")
+set.seed(2)
+adult_training2 <- sample_frac(adult_df, .7)
+adult_testing2 <- setdiff(adult_df, adult_training2)
+adult_tree_2 <- rpart(formula = income~., data=adult_training2)
+prediccion_2 <- predict(adult_tree_2, newdata=adult_testing2, type="class")
+```
+
+```{r}
+rpart.plot(adult_tree_2)
+```
+
+```{r}
+confusionMatrix(prediccion_2, adult_testing2[["income"]])
+```
+
+### PROBAMOS HACER 2 ARBOLES DE CADA UNO DE LOS OTROS 2 DATASETS
+
+```{r}
+adult_filtered <- adult_filtered %>%
+  mutate_at("income", factor) %>%
+  filter(native.country != "Holand-Netherlands")
+
+set.seed(1694)
+
+adult_training4 <- sample_frac(adult_filtered, .7)
+adult_testing4 <- setdiff(adult_filtered, adult_training4)
+adult_tree4 <- rpart(formula = income ~ ., data = adult_training4)
+prediccion_4 <- predict(adult_tree4, newdata = adult_testing4, type = "class")
+confusionMatrix(prediccion_4, adult_testing4[["income"]])
+```
+
+```{r}
+rpart.plot(adult_tree4)
+```
+
+```{r}
+set.seed(1724)
+adult_training5 <- sample_frac(adult_filtered, .7)
+adult_testing5 <- setdiff(adult_filtered, adult_training5)
+adult_tree5 <- rpart(formula = income ~ ., data = adult_training5)
+prediccion_5 <- predict(adult_tree5, newdata = adult_testing5, type="class")
+confusionMatrix(prediccion_5, adult_testing5[["income"]])
+```
+
+```{r}
+rpart.plot(adult_tree5)
+```
+
+```{r}
+adult_df2 <- adult_df2 %>%
+  mutate_at("income", factor)
+set.seed(4125)
+adult_training6 <- sample_frac(adult_df2, .7)
+adult_testing6 <- setdiff(adult_df2, adult_training6)
+adult_tree6 <- rpart(formula = income ~ ., data = adult_training6)
+prediccion_6 <- predict(adult_tree6, newdata = adult_testing6, type="class")
+confusionMatrix(prediccion_6, adult_testing6[["income"]])
+```
+
+```{r}
+rpart.plot(adult_tree6)
+```
+
+```{r}
+adult_df2 <- adult_df2 %>%
+  filter(native.country != "Holand-Netherlands")
+set.seed(3534)
+adult_training7 <- sample_frac(adult_df2, .7)
+adult_testing7 <- setdiff(adult_df2, adult_training7)
+adult_tree7 <- rpart(formula = income ~ ., data=adult_training7)
+prediccion_7 <- predict(adult_tree7, newdata=adult_testing7, type="class")
+confusionMatrix(prediccion_7, adult_testing7[["income"]])
+```
+
+```{r}
+rpart.plot(adult_tree7)
+```
+
+```{r}
+adult_filtered <- adult_filtered %>%
+  mutate(education = case_when(
+    education %in% c("Preschool", "1st-4th", "5th-6th", "7th-8th") ~ "Primaria",
+    education %in% c("HS-grad", "9th", "10th", "11th", "12th") ~ "Secundaria",
+    education %in% c("Assoc-acdm", "Assoc-voc", "Bachelors", "Masters", 
+                     "Doctorate", "Prof-school", "Some-college") ~ "College"))
+```
+
+```{r}
+table(adult_filtered$education)
+```
+
+```{r}
+table(adult_filtered$relationship)
+```
+
+```{r}
+adult_filtered <- adult_filtered %>%
+  mutate(relationship = case_when(
+    relationship %in% c("Not-in-family", "Other-relative", "Own-child", "Unmarried") ~ "Other",
+    relationship == "Husband" ~ "Husband",
+    relationship == "Wife" ~ "Wife",
+    TRUE ~ relationship))
+```
+
+```{r}
+set.seed(2424)
+adult_training8 <- sample_frac(adult_filtered, .7)
+adult_testing8 <- setdiff(adult_filtered, adult_training8)
+adult_tree8 <- rpart(formula = income ~ ., data=adult_training8)
+prediccion_8 <- predict(adult_tree8, newdata = adult_testing8, type="class")
+confusionMatrix(prediccion_8, adult_testing8[["income"]], positive=">50K")
+```
+
+```{r}
+rpart.plot(adult_tree8)
+```
+
+```{r}
+table(adult_filtered$marital.status)
+```
+
+```{r}
+adult_filtered <- adult_filtered %>%
+  mutate(marital.status = case_when(
+    marital.status %in% c("Married-spouse-absent", "Married-AF-spouse", "Married-civ-spouse") ~ "Married",
+    marital.status %in% c("Divorced", "Widowed", "Separated") ~ "Not-married",
+    marital.status == "Never-married" ~ "Never-married",
+    TRUE ~ marital.status
+  ))
+```
+
+```{r}
+table(adult_filtered$relationship)
+```
+
+```{r}
+set.seed(1232)
+adult_training9 <- sample_frac(adult_filtered, .8)
+adult_testing9 <- setdiff(adult_filtered, adult_training9)
+adult_tree9 <- rpart(formula = income ~ ., data=adult_training9)
+prediccion_9 <- predict(adult_tree9, newdata=adult_testing9, type="class")
+confusionMatrix(prediccion_9, adult_testing9[["income"]])
+```
+
+```{r}
+rpart.plot(adult_tree9)
+```

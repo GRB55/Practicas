@@ -1,0 +1,290 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(tidyverse) # Limpieza y transformación de datos
+library(caret) # Generación de modelos y métricas
+library(plotly) # Gráficos interactivos
+library(rattle) # Datasets
+library(lubridate) # Manejo de tipo de dato fecha en caso de haberlos
+library(DescTools) # Imputar moda de ser necesario
+library(mltools) # Usar encoders como onehotencoder
+library(data.table) 
+library(pROC) # Curva ROC y valor AUC
+
+# Carga de datos
+data("audit")
+```
+
+```{r}
+# Dimensión del dataset
+dim(audit)
+```
+```{r}
+# Columnas del dataset
+names(audit)
+```
+```{r}
+# Estructura del dataset
+str(audit)
+```
+```{r}
+# Primera vista del dataset
+head(audit)
+```
+```{r}
+# Drop de la columna ID
+audit <- audit %>%
+  select(-ID)
+```
+
+
+```{r}
+# Valores nulos por columna
+colSums(is.na(audit))
+```
+*Variables categoricas*
+
+```{r}
+# Definir que columnas son categóricas/factores
+categorica <- c()
+for (i in 1:ncol(audit)) {
+  if (is.character(audit[[i]]) | is.factor(audit[[i]])){
+    categorica <- c(categorica, names(audit)[i])
+  }
+}
+cat("Cantidad de columnas categóricas:", length(categorica), "\n")
+cat("Columnas categóricas:", categorica)
+```
+```{r}
+# Valores nulos en columnas categóricas
+colSums(is.na(audit[, categorica]))
+```
+```{r}
+# Valores únicos de columnas categóricas
+sapply(audit[, categorica], unique)
+```
+
+```{r}
+# Cardinalidad de las columnas categoricas
+sapply(audit[, categorica], function(x) length(unique(x)))
+```
+No existe alta cardinalidad por lo que dejamos los valores existentes.
+```{r}
+# Apariciones de los valores categóricos
+sapply(audit[, categorica], table)
+```
+Hay valores que tienen una o dos instancias, lo que será un problema cuando dividamos los datos en entrenamiento y prueba, por lo que los eliminaremos.
+
+```{r}
+frecuencias <- sapply(audit[, categorica], table)
+for (col in categorica){
+  valores <- names(frecuencias[[col]][frecuencias[[col]] > 2])
+  audit <- audit[audit[[col]] %in% valores, ]
+}
+
+sapply(audit[, categorica], table)
+```
+
+```{r}
+# Imputar valores nulos con la moda
+audit <- audit %>%
+  mutate(across(where(is.factor), ~ifelse(is.na(.), Mode(., na.rm=T), .)))
+```
+
+```{r}
+colSums(is.na(audit))
+```
+
+*Variables numéricas*
+
+```{r}
+# Variables numéricas
+numerica <- c()
+for (i in 1:ncol(audit)) {
+  if (is.numeric(audit[[i]])){
+    numerica <- c(numerica, names(audit)[[i]])
+  }
+}
+cat("Cantidad de columnas numéricas:", length(numerica), "\n")
+cat("Columnas numéricas:", numerica)
+```
+```{r}
+# Valores nulos en variables numéricas
+colSums(is.na(audit[, numerica]))
+```
+
+
+```{r}
+# Boxplot para analizar presencia de outliers
+audit %>%
+  select(numerica) %>%
+  gather(key="variable", value="valor") %>%
+  ggplot() +
+  aes(y=valor) +
+  geom_boxplot() +
+  facet_wrap(~ variable, scales="free_y") +
+  theme_bw()
+```
+Observamos presencia de outliers por lo que pasamos a analizar la distribución de las columnas.
+
+```{r}
+# Distribución de variables numéricas
+audit %>%
+  select(numerica) %>%
+  gather(key="variable", value="valor") %>%
+  ggplot() +
+  aes(x=valor) +
+  geom_histogram(color="black", fill="red", bins=30) +
+  facet_wrap(~ variable, scales="free") +
+  theme_bw()
+```
+Vemos que las distribuciones están sesgadas positivamente (cola larga a la derecha).
+Buscaremos outliers con el IQR para principalmente "AGE", "INCOME" y "HOURS".
+
+```{r}
+outliers <- function(x){
+  quantiles <- quantile(x, c(0.25, 0.75))
+  iqr <- IQR(x)
+  lower_bound <- quantiles[1] - iqr * 1.5
+  upper_bound <- quantiles[2] + iqr * 1.5
+  cat("Límite inferior:", lower_bound, "\n")
+  cat("Límite superior:", upper_bound, "\n")
+  cat("Mínimo:", min(x), "\n")
+  cat("Máximo:", max(x), "\n")
+}
+
+sapply(audit[, numerica], outliers)
+```
+En la columna "AGE" el límite inferior es -0.5 y el superior es 75.5.
+El valor mínimo es 17 y el máximo es 83, por lo que los outliers son los valores > 75.5.
+En la columna "INCOME" el límite inferior es -84444.17  y el superior es 230676.2.
+El valor mínimo es 609.72 y el máximo es 481259.5, por lo que los outliers son los valores > 230676.2.
+En la columna "HOURS" el límite inferior es 32.5 y el superior es 52.5.
+El valor mínimo es 1 y el máximo es 99, por lo que los outliers son los valores <  32.5 y > 52.5.
+
+
+```{r}
+# Correlación entre variables
+correlacion <- cor(audit)
+
+corrplot::corrplot(correlacion, method="number")
+```
+
+
+```{r}
+# Distribución de la variable target
+table(audit$TARGET_Adjusted)
+prop.table(table(audit$TARGET_Adjusted))
+```
+
+
+```{r}
+# Features y target
+X <- audit %>%
+  select(-TARGET_Adjusted)
+X$Gender <- as.factor(X$Gender)
+X$Employment <- as.factor(X$Employment)
+X$Education <- as.factor(X$Education)
+X$Marital <- as.factor(X$Marital)
+X$Occupation <- as.factor(X$Occupation)
+
+y <- as.factor(audit$TARGET_Adjusted)
+```
+
+```{r}
+# Train y test sets
+indice <- createDataPartition(y, p=0.8, list=F)
+
+X_train <- X[indice, ]
+X_test <- X[-indice, ]
+y_train <- y[indice]
+y_test <- y[-indice]
+```
+
+*Feature Engineering*
+```{r}
+# Dimensiones del set de  entrenamiento y prueba
+dim(X_train)
+dim(X_test)
+```
+```{r}
+# Presencia de valores nulos
+sum(is.na(X_train))
+sum(is.na(X_test))
+```
+```{r}
+# Transformar outliers
+valor_max <- function(df, variable, top){
+  df[[variable]] <- pmin(df[[variable]], top, na.rm=T)
+  return(df)
+}
+
+valor_min <- function(df, variable, bottom) {
+  df[[variable]] <- pmax(df[[variable]], bottom, na.rm = TRUE)
+  return(df)
+}
+
+for (df1 in c("X_train", "X_test")){
+  assign(df1, valor_max(get(df1), "Age", 75.5))
+  assign(df1, valor_max(get(df1), "Income", 230676.2))
+  assign(df1, valor_max(get(df1), "Hours", 52.5))
+  assign(df1, valor_min(get(df1), "Hours", 32.5))
+}
+
+head(X_train)
+head(X_test)
+```
+
+*Modelado*
+
+```{r}
+set.seed(1223)
+control <- trainControl(method="cv", number=10)
+modelo_reg_log <- train(x=X_train,
+                        y=y_train,
+                        method="glm",
+                        family=binomial(),
+                        trControl=control)
+pred_reg_log <- predict(modelo_reg_log, X_test)
+conf_mat_rl <- confusionMatrix(pred_reg_log, y_test, positive="1")
+conf_mat_rl
+```
+```{r}
+# Gráfico de la matriz de confusión
+mat_conf_rl <- as.data.frame(conf_mat_rl$table)
+
+mat_conf_rl %>%
+  ggplot() +
+  aes(x=Prediction, y=Reference, fill=Freq) +
+  geom_tile() +
+  geom_text(aes(label=Freq), color="white", size=5) +
+  scale_fill_viridis_c() +
+  labs(title="Matriz de confusión") +
+  theme_bw()
+```
+
+```{r}
+# Evaluar la posibilidad de overfitting en el modelo
+sum(predict(modelo_reg_log, X_train) == y_train) / length(y_train)
+sum(predict(modelo_reg_log, X_test) == y_test) / length(y_test)
+```
+```{r}
+# F1 SCORE
+conf_mat_rl$byClass["F1"]
+```
+
+
+```{r}
+# Curva ROC y AUC
+probs <- predict(modelo_reg_log, X_test, type="prob")
+roc_c <- roc(as.numeric(y_test), as.numeric(probs[, 2]))
+plot(roc_c, col="blue", main="Curva ROC")
+auc(roc_c)
+```
+
+Acurracy de 95.4%, buen rendimiento del modelo.
+Diferencia entre train set y test set insignificante, por lo que no hay signos de overfitting.
+AUC de 0.96, excelente capacidad predictiva, casi perfecta.
+F1 score de 0.89, buen equilibrio entre precisión (evita falsos positivos) y recall (detecta instancias positivas correctamente).

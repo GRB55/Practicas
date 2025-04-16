@@ -1,0 +1,269 @@
+---
+title: "Random Forest"
+output: html_notebook
+author: "Gonzalo Rios Barcelo"
+date: "14/03/2025"
+---
+
+```{r}
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(tidyverse)
+library(plotly)
+```
+
+```{r}
+# Cargar los datos
+ruta <- choose.files()
+
+heart <- read_csv(ruta)
+# Primera vista del dataset
+head(heart)
+```
+```{r}
+# Estructura del dataset
+str(heart)
+```
+```{r}
+# Estadisticas
+summary(heart)
+```
+```{r}
+# Valores nulos
+sum(is.na(heart))
+```
+```{r}
+# Dimensiones del dataset
+dim(heart)
+```
+```{r}
+# Columnas del dataset
+names(heart)
+```
+
+```{r}
+# Transforma target de una variable binaria a un factor para mejor legibilidad
+heart <- heart %>%
+  mutate(HeartDisease = ifelse(HeartDisease == 1, "Yes", "No"))
+```
+
+```{r}
+heart <- heart %>%
+  mutate(ExerciseAngina = ifelse(ExerciseAngina == "Y", "Yes", "No")) %>%
+  mutate(Sex = ifelse(Sex == "M", "Male", "Female")) %>%
+  mutate(FastingBS = ifelse(FastingBS == 1, "Yes", "No"))
+
+head(heart)
+```
+
+```{r}
+# Obtener las variables categoricas
+categoric_cols <- c()
+
+for(i in 1:ncol(heart)){
+  if(is.character(heart[[i]])){
+    categoric_cols <- c(categoric_cols, names(heart)[i])
+  }
+}
+
+cat("Cantidad de columnas categoricas:", length(categoric_cols), "\n")
+cat("Columnas categoricas:", categoric_cols)
+```
+
+```{r}
+# Convertir las variables categoricas a factor
+for(col in categoric_cols){
+  heart[[col]] <- as.factor(heart[[col]])
+}
+
+head(heart)
+```
+
+
+```{r}
+heart %>%
+  select(categoric_cols) %>%
+  gather(key="variable", value="valor") %>%
+  group_by(variable, valor) %>%
+  summarise(count=n()) %>%
+  arrange(variable, desc(count)) %>%
+  ggplot() +
+  aes(x=reorder(valor, count), y=count) +
+  geom_histogram(stat="identity", color="black", fill="blue4") +
+  labs(x="Categorias", y="Frecuencia") +
+  facet_wrap(~variable, scale="free") +
+  theme_minimal()
+```
+```{r}
+heart %>%
+  select(!categoric_cols) %>%
+  gather(key="variable", value="valor") %>%
+  group_by(variable, valor) %>%
+  summarise(count=n()) %>%
+  arrange(variable, desc(count)) %>%
+  ggplot() +
+  aes(x=valor) +
+  geom_histogram(color="black", fill="blue2", bins=25) +
+  facet_wrap(~variable, scales="free") +
+  theme_minimal()
+```
+```{r}
+numeric_cols <- heart[, -which(names(heart) %in% categoric_cols)]
+
+correlacion <- cor(numeric_cols)
+
+corrplot::corrplot(correlacion, method="number", type="upper")
+```
+
+```{r}
+cat("Cantidad de datos en la variable target:")
+table(heart$HeartDisease)
+cat("Que proporcion representan sobre la variable target:")
+prop.table(table(heart$HeartDisease))
+```
+```{r}
+ggplot(heart) +
+  aes(x=HeartDisease, fill=Sex) +
+  geom_histogram(stat="count", color="black", bins=30, show.legend = F) +
+  facet_wrap(~Sex) +
+  theme_minimal()
+```
+```{r}
+set.seed(123)
+
+train_index <- createDataPartition(heart$HeartDisease, p=0.7, list=F)
+
+train_set <- heart[train_index, ]
+
+test_set <- heart[-train_index, ]
+
+random_forest <- randomForest(HeartDisease ~ ., data=train_set)
+
+random_forest
+```
+```{r}
+rf_predict <- predict(random_forest, test_set)
+
+confusionMatrix(rf_predict, test_set$HeartDisease, positive="Yes")
+```
+```{r}
+importancia <- importance(random_forest)
+
+importancia <- as.data.frame(importancia)
+
+importancia %>%
+  arrange(desc(MeanDecreaseGini)) %>%
+  head(5)
+```
+
+
+```{r}
+set.seed(321)
+random_forest_top <- randomForest(HeartDisease ~ ST_Slope + ChestPainType + MaxHR + Cholesterol + Oldpeak, data=train_set)
+
+random_forest_top
+```
+```{r}
+prediccion_rf_top <- predict(random_forest_top, test_set)
+
+confusionMatrix(prediccion_rf_top, test_set$HeartDisease, positive="Yes")
+```
+
+```{r}
+heart
+```
+```{r}
+control <- trainControl(method="cv", number=5)
+modelo <- train(HeartDisease ~ .,
+                data=heart,
+                method="rf",
+                trControl=control)
+print(modelo)
+print(modelo$results)
+```
+```{r}
+modelo_opt <- train(HeartDisease ~ .,
+                data=heart,
+                method="rf",
+                trControl=control,
+                tuneGrid=expand.grid(mtry=2))
+predicto <- predict(modelo_opt, heart)
+
+confusionMatrix(predicto, heart$HeartDisease, positive="Yes")
+```
+
+
+```{r}
+# UI
+ui <- fluidPage(
+  titlePanel("Predicción de Enfermedad Cardíaca"),
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("age", "Edad:", value=50, min=18, max=100),
+      selectInput("sex", "Sexo:", choices=c("Female","Male")),
+      selectInput("chest_pain", "Tipo de dolor en el pecho:", choices=c("TA",
+                                                                        "ATA",
+                                                                        "NAP",
+                                                                        "ASY")),
+      numericInput("resting_bp", "Presion arterial en repsoso (mm Hg):", value=120, min=80, max=200),
+      numericInput("cholesterol", "Colesterol sérico (mg/dl):", value=200, min=100, max=600),
+      selectInput("fasting_bs", "Glucosa en ayuno (> 120 mg/dl):", choices=c("No", "Yes")),
+      selectInput("resting_ecg", "Resultados ECG en reposo:", choices=c("Normal",
+                                                                        "ST",
+                                                                        "LVH")),
+      numericInput("max_hr", "Frecuencia cardiaca maxima alcanzada:", value=150, min=60, max=220),
+      selectInput("exercise_angina", "Angina inducida por ejercicio:", choices=c("No", "Yes")),
+      numericInput("oldpeak", "Depresion del ST inducida por ejercicio:", value=0.0, min=-2, max=6),
+      selectInput("st_slope", "Pendiente del segmento ST:", choices=c("Up",
+                                                                      "Flat",
+                                                                      "Down")),
+      actionButton("predict", "Predecir")
+    ),
+    mainPanel(
+      h3("Resultado de la Predicción"),
+      textOutput("pred_result"),
+      textOutput("pred_prob")
+    )
+  )
+)
+# Servidor
+server <- function(input, output){
+  prediccion <- eventReactive(input$predict, {
+    nueva_data <- data.frame(
+      Age = as.numeric(input$age),
+      Sex = factor(input$sex, levels = c("Female", "Male")),
+      ChestPainType = factor(input$chest_pain, levels = c("ASY", "ATA", "NAP", "TA")),
+      RestingBP = as.numeric(input$resting_bp),
+      Cholesterol = as.numeric(input$cholesterol),
+      FastingBS = factor(input$fasting_bs, levels = c("No", "Yes")),
+      RestingECG = factor(input$resting_ecg, levels = c("LVH", "Normal", "ST")),
+      MaxHR = as.numeric(input$max_hr),
+      ExerciseAngina = factor(input$exercise_angina, levels = c("No", "Yes")),
+      Oldpeak = as.numeric(input$oldpeak),
+      ST_Slope = factor(input$st_slope, levels = c("Down", "Flat", "Up"))
+    )
+    pred <- predict(random_forest, nueva_data, type="response")
+    prob <- predict(random_forest, nueva_data, type="prob")
+    
+    list(pred=pred, prob=prob)
+  })
+  
+  output$pred_result <- renderText({
+    req(prediccion())
+    if (prediccion()$pred == "Yes"){
+      "Prediccion: Riesgo de enfermedad cardiaca."
+    } else {
+      "Prediccion: Sin riesgo de enfermedad cardiaca."
+    }
+  })
+  
+  output$pred_prob <- renderText({
+    req(prediccion())
+    paste("Probabilidad de enfermedad cardiaca:", round(prediccion()$prob[1, "Yes"] * 100, 2), "%")
+  })
+}
+
+shinyApp(ui=ui, server=server)
+```
+

@@ -1,0 +1,108 @@
+---
+title: "SERIES TEMPORALES"
+author: "Gonzalo Rios Barcelo"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(TSA)
+library(tseries)
+library(tsibble)
+library(fabletools)
+library(forecast)
+```
+
+```{r}
+data(AirPassengers)
+
+AirPassengers
+```
+```{r}
+plot(AirPassengers, col="blue2")
+
+lines(lowess(time(AirPassengers), AirPassengers), col="red", lwd=2)
+```
+```{r}
+start(AirPassengers); end(AirPassengers)
+```
+```{r}
+frequency(AirPassengers)
+```
+```{r}
+summary(AirPassengers)
+```
+```{r}
+cycle(AirPassengers)
+```
+```{r}
+boxplot(AirPassengers ~ cycle(AirPassengers), col="lightgreen", xlab="Month")
+```
+```{r}
+options(repr.plot.width=10, repr.plot.height=6)
+
+seasonplot(AirPassengers, col=rainbow(12), year.labels=TRUE)
+```
+```{r}
+decomposed <- decompose(AirPassengers)
+
+plot(decomposed)
+```
+
+```{r}
+ndiffs(AirPassengers)
+```
+```{r}
+air_p_diff <- diff(AirPassengers)
+```
+
+```{r}
+plot(air_p_diff, type="o", col="brown3")
+```
+
+```{r}
+dickey_fuller(air_p_diff)
+```
+```{r}
+air_p_series <- auto.arima(AirPassengers)
+
+summary(air_p_series)
+
+checkresiduals(air_p_series)
+```
+```{r}
+pred <- forecast(air_p_series, h=12)
+
+plot(pred)
+```
+```{r}
+# Validacion del modelo
+
+train_pass <- window(AirPassengers, end=c(1958,12))
+
+test_pass <- window(AirPassengers, start=c(1959,1))
+
+plot(AirPassengers, main="Airpassengers: train vs test", col="blue", lwd=2)
+lines(train_pass, col="green", lwd=2)
+lines(test_pass, col="red", lwd=2)
+legend("topleft", legend=c("AirPassengers", "Train", "Test"), col=c("blue", "green", "red"), lwd=2)
+```
+```{r}
+train_pass_series <- auto.arima(train_pass)
+
+summary(train_pass_series)
+```
+
+```{r}
+pred_train <- forecast(train_pass_series, h=length(test_pass))
+
+plot(pred_train, main="Prediccion vs realidad", col="blue", lwd=2)
+
+lines(test_pass, col="red",  lwd=2)
+legend("topleft", legend=c("Prediccion", "Realidad"), col=c("blue", "red"), lty=1, lwd=2)
+```
+```{r}
+accuracy(pred_train, test_pass)
+```
+

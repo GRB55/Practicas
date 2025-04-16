@@ -1,0 +1,304 @@
+---
+title: "ONLINE RETAIL ANALYSIS"
+author: "Gonzalo Rios Barcelo"
+date: 24/01/2025
+output: html_notebook
+---
+
+### Librerias a usar
+
+```{r}
+library(arules)
+library(arulesViz)
+library(tidyverse)
+library(plotly)
+library(readxl)
+```
+
+
+### Dataset a trabajar: ONLINE RETAIL (UCI)
+
+```{r}
+ruta <-file.choose()
+```
+
+
+```{r}
+online_retail <- read_xlsx(ruta)
+head(online_retail)
+```
+
+## EDA y Limpieza/Transformación de datos
+
+```{r}
+summary(online_retail)
+```
+```{r}
+str(online_retail)
+```
+
+```{r}
+colSums(is.na(online_retail))
+```
+
+```{r}
+sum(duplicated(online_retail))
+```
+```{r}
+online_retail <- online_retail %>%
+  drop_na() %>%
+  distinct()
+```
+
+```{r}
+sort(table(online_retail$Country), decreasing=TRUE)
+```
+```{r}
+online_retail <- online_retail %>%
+  mutate(Country = case_when(Country == "EIRE" ~ "Ireland",
+                             Country == "RSA" ~ "South Africa",
+                             TRUE ~ Country))
+```
+
+
+```{r}
+top_10_countries <- head(sort(table(online_retail$Country), decreasing=TRUE), 10)
+top_10_countries_df <- as.data.frame(top_10_countries)
+colnames(top_10_countries_df) <- c("Country", "Frequency")
+```
+
+```{r}
+ggplot(top_10_countries_df, aes(x=reorder(Country, Frequency), y=log(Frequency), fill=factor(Country))) +
+  geom_bar(stat="identity", color="black", show.legend = FALSE) +
+  geom_text(aes(label= Frequency), vjust=-0.5, hjust=5, size=3) +
+  theme_minimal() +
+  labs(title="Paises con más pedidos", x=NULL, y="Frecuencia") +
+  coord_flip() +
+  theme(plot.title=element_text(hjust=0.5))
+```
+```{r}
+typeof(online_retail$InvoiceDate)
+```
+```{r}
+online_retail <- online_retail %>%
+  mutate(InvoiceDate = as.Date.POSIXct(InvoiceDate))
+```
+
+```{r}
+online_retail$Total_Sold <- online_retail$Quantity * online_retail$UnitPrice
+```
+
+```{r}
+head(online_retail)
+```
+```{r}
+cancelaciones <- online_retail %>%
+  filter(grepl("^C", InvoiceNo) & StockCode != "D") %>%
+  pull(InvoiceNo)
+
+retail_limpio <- online_retail %>%
+  filter(!InvoiceNo %in% cancelaciones & !paste0("C", InvoiceNo) %in% cancelaciones)
+```
+
+```{r}
+summary(retail_limpio)
+```
+```{r}
+retail_limpio %>%
+  filter(UnitPrice == 0)
+```
+
+```{r}
+retail_limpio <- retail_limpio %>%
+  filter(UnitPrice > 0)
+```
+
+
+```{r}
+descuentos <- retail_limpio %>%
+  filter(grepl("^C", InvoiceNo)) %>%
+  group_by(CustomerID) %>%
+  summarise(Total_disc = sum(Total_Sold))
+
+descuentos
+```
+
+```{r}
+gastos_consumidor <-retail_limpio %>%
+  filter(StockCode != "D") %>%
+  group_by(CustomerID) %>%
+  summarise(Total_Spent = sum(Total_Sold))
+
+gastos_consumidor %>%
+  filter(CustomerID %in% descuentos$CustomerID)
+```
+
+```{r}
+gastos_consumidor <- gastos_consumidor %>%
+  filter(CustomerID %in% descuentos$CustomerID) %>%
+  mutate(Total_Spent = Total_Spent + descuentos$Total_disc)
+
+gastos_consumidor
+```
+
+```{r}
+retail_limpio %>%
+  filter(grepl("^C", InvoiceNo))
+```
+
+```{r}
+retail_limpio <- retail_limpio %>%
+  filter(!grepl("^C", InvoiceNo))
+```
+
+```{r}
+dim(retail_limpio)
+```
+
+```{r}
+top_country_sales <- retail_limpio %>%
+  group_by(Country) %>%
+  summarise(Total_Country_Sales = sum(Total_Sold)) %>%
+  arrange(desc(Total_Country_Sales))
+top_10_country_sales <- head(top_country_sales, n=10)
+
+ggplot(top_10_country_sales, aes(x=reorder(Country, Total_Country_Sales), y=Total_Country_Sales, fill=factor(Country))) +
+  geom_bar(stat="identity", show.legend = FALSE) +
+  labs(title="Total vendido por país", x=NULL, y="Total") +
+  scale_y_continuous(labels=scales::label_comma()) +
+  coord_flip() +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust=0.5))
+```
+```{r}
+# Total Vendido Sin United Kingdom
+top_sales <- retail_limpio %>%
+  filter(Country != "United Kingdom") %>%
+  group_by(Country) %>%
+  summarise(Total_Country_Sales = sum(Total_Sold)) %>%
+  arrange(desc(Total_Country_Sales))
+top_10 <- head(top_sales, n=10)
+
+ggplot(top_10, aes(x=reorder(Country, Total_Country_Sales), y=Total_Country_Sales, fill=factor(Country))) +
+  geom_bar(stat="identity", show.legend = FALSE) +
+  labs(title="Total vendido por país", subtitle="(Sin UK)", x=NULL, y="Total") +
+  scale_y_continuous(labels=scales::label_comma()) +
+  coord_flip() +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust=0.5),
+        plot.subtitle = element_text(hjust=0.5))
+```
+
+```{r}
+range(retail_limpio$InvoiceDate)
+```
+
+```{r}
+cantidad_ventas_diarias <- retail_limpio %>%
+  group_by(InvoiceDate) %>%
+  summarise(Count=n())
+
+ggplot(cantidad_ventas_diarias, aes(x=InvoiceDate, y=Count)) +
+  geom_line(col="red") +
+  labs(title="Cantidad vendida", subtitle="(2010/12/01 - 2011/12/09)", x=NULL) +
+  theme_minimal() + 
+  theme(plot.title=element_text(hjust=0.5),
+        plot.subtitle=element_text(hjust=0.5))
+```
+```{r}
+total_diario <- retail_limpio %>%
+  group_by(InvoiceDate) %>%
+  summarise(Total = sum(Total_Sold))
+
+ggplot(total_diario, aes(x=InvoiceDate, y=Total)) +
+  geom_line(col="orange") +
+  labs(title="Valor total vendido", subtitle="(2010/12/01 - 2011/12/09)", x=NULL) +
+  theme_minimal() +
+  theme(plot.title=element_text(hjust=0.5),
+        plot.subtitle=element_text(hjust=0.5))
+```
+## REGLAS DE ASOCIACIÓN
+
+```{r}
+transacciones <- retail_limpio %>%
+  select(InvoiceNo, Description)
+
+transacciones
+```
+```{r}
+transac_list <- split(transacciones$Description, transacciones$InvoiceNo)
+head(transac_list)
+```
+
+```{r}
+transac_encoded <- as(transac_list, "transactions")
+```
+```{r}
+itemsets <- apriori(transac_encoded, parameter = list(support=0.0167, target="frequent itemsets"))
+summary(itemsets)
+```
+
+```{r}
+top5_itemsets <- sort(itemsets, by="support", decreasing=TRUE)[1:5]
+inspect(top5_itemsets)
+```
+
+```{r}
+as(top5_itemsets, "data.frame") %>%
+  ggplot(aes(x=reorder(items, support), y=support)) +
+  geom_col(fill="skyblue3",  width=0.5) +
+  labs(x="items", y="soporte") +
+  coord_flip() +
+  theme_bw()
+```
+
+Tengo 392.692 transacciones, y quiero las reglas que aparecen al menos en el 20% de transacciones mensuales.
+Transacciones mensuales = 392.692 / 12 -> 32.724,333 * 0.2 -> 6544,867
+Umbral Supp -> 6544,867 / 392.692 = 0,0167
+
+```{r}
+transac_reglas <- apriori(transac_encoded, parameter=list(supp=0.0167, conf=0.5))
+```
+```{r}
+print(paste("Reglas generadas:", length(transac_reglas)))
+```
+
+
+```{r}
+transac_reglas_df <- as(transac_reglas, "data.frame")
+
+transac_reglas_sorted <- transac_reglas_df %>%
+  arrange(desc(lift))
+
+transac_reglas_sorted
+```
+
+```{r}
+hist(transac_reglas_sorted$confidence, col="skyblue",
+     main="Distribucion de la confianza de las reglas",
+     xlab="Confianza",
+     )
+```
+```{r}
+hist(transac_reglas_sorted$lift, col="red",
+     main="Distribucion del lift de las reglas",
+     xlab="Lift")
+```
+```{r}
+plot(transac_reglas, method = "scatterplot", measure=c("support", "confidence"), engine="plotly")
+```
+
+En base a las reglas obtenidas, vemos que por ejemplo cuando se llevan taza y platillo de té color rosa en conjunto con el de rosas, tambien llevan el conjunto verde con un 90% de confianza. También vemos que cuando se llevan loncheras de niña, con un 70% de confianza podremos decir que se llevaran la versión de niño. Otro ejemplo es que cuando llevan el kit de hornear SPACEBOY, tambien llevarán el kit de hornear de 9 piezas, con un 75% de confianza.
+
+*CONSULTAS*
+
+ANALISIS RFM O ALGO POR EL ESTILO QUE LUEGO SIRVE PARA REALIZAR KMEANS?
+
+TEST DE FISHER? PROPOSITO?
+MAXIMAL? IS.MAXIMAL()? PROPOSITO?
+
+SIGUIENTE GRÁFICO:
+
+```{r}
+plot(transac_reglas, method="paracoord", control=list(alpha=0.5))
+```

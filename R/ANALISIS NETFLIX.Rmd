@@ -1,0 +1,140 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# ANÁLISIS DE PELICULAS Y SERIES DE NETFLIX
+
+## CARGAR LAS LIBRERIAS QUE USAREMOS
+
+```{r}
+library(tidyverse)
+library(plotly)
+```
+## CARGAMOS EL ARCHIVO
+
+```{r}
+netflix <- read_csv("C:\\Users\\Educa informatica\\Desktop\\CIENCIAS DE DATOS\\CSV, EXCELS, ETC\\archivos csv\\netflix1.csv", show_col_types = FALSE)
+```
+
+## ANÁLISIS EXPLORATORIO
+
+```{r}
+head(netflix, 5)
+```
+
+```{r}
+summary(netflix)
+```
+```{r}
+dim(netflix)
+```
+
+```{r}
+str(netflix)
+```
+```{r}
+range(netflix$release_year)
+```
+```{r}
+paste("Cantidad de categorias:", nlevels(as.factor(netflix$listed_in)))
+paste("Cantidad de ratings:", nlevels(as.factor(netflix$rating)))
+paste("Cantidad de directores:", nlevels(as.factor(netflix$director)))
+```
+
+```{r}
+table(netflix$type)
+```
+```{r}
+barplot(table(netflix$type), col = "red")
+```
+
+```{r}
+table(netflix$rating)
+```
+```{r}
+barplot(table(netflix$rating), col = "skyblue")
+```
+
+
+```{r}
+sort(table(netflix$country), decreasing=TRUE)
+```
+```{r}
+barplot(head(sort(table(netflix$country), decreasing=TRUE), 10), col="green")
+```
+```{r}
+sum(!is.na.data.frame(netflix))
+```
+```{r}
+netflix$date_added <- as.Date(netflix$date_added, format = "%m/%d/%Y")
+head(netflix)
+```
+
+```{r}
+not_given_out <- netflix %>%
+  filter(country != "Not Given") %>%
+  group_by(country) %>%
+  summarise(counts = n()) %>%
+  arrange(desc(counts))
+
+not_given_out$country <- factor(not_given_out$country, levels = not_given_out$country[order(- not_given_out$counts)])
+
+ten_not_given_out <- not_given_out %>%
+  head(10)
+
+
+grafico <- ten_not_given_out %>%
+  ggplot(aes(x=reorder(country, counts), y=counts, fill=country)) +
+  geom_bar(stat = "identity", colour="black") +
+  theme_minimal() +
+  labs(title="Cantidad de contenido por pais", x=NULL, y="Cantidad") +
+  coord_flip()
+ggplotly(grafico)
+```
+```{r}
+evol <- netflix %>%
+  filter(country != "Not Given") %>%
+  group_by(year(date_added), type) %>%
+  summarise(counts = n())
+  
+colnames(evol) <- c("Año", "Tipo", "Cantidad")
+
+graf_linea <- evol %>%
+  ggplot(aes(x=Año, y=Cantidad, colour=Tipo)) +
+  geom_line(lwd=3) +
+  theme_minimal() +
+  labs(title="Evolución del contenido", x=NULL, y="Cantidad")
+ggplotly(graf_linea)
+```
+
+```{r}
+cont_año <- netflix %>%
+  filter(country != "Not Given") %>%
+  group_by(release_year) %>%
+  summarise(counts = n()) %>%
+  arrange(desc(counts)) %>%
+  head(10)
+
+cont_año %>%
+  ggplot(aes(x=reorder(release_year, counts), y=counts, fill=as.factor(release_year))) +
+  geom_bar(stat="identity", show.legend = FALSE) +
+  theme_minimal () +
+  coord_flip() +
+  labs(title="Cantidad de peliculas por año", x=NULL, y="Cantidad") +
+  theme(plot.title = element_text(hjust=0.5, face="bold"))
+```
+```{r}
+netflix %>%
+  filter(country != "Not Given" & director != "Not Given") %>%
+  group_by(director) %>%
+  summarise(counts = n()) %>%
+  arrange(desc(counts)) %>%
+  head(15) %>%
+  ggplot(aes(x=reorder(director, counts), y=counts, fill=as.factor(director))) +
+  geom_bar(stat="identity", show.legend=FALSE) +
+  theme_minimal() +
+  coord_flip() +
+  labs(title="15 Directores con más películas", x=NULL, y="Cantidad") +
+  theme(plot.title = element_text(hjust=0.5))
+```
+

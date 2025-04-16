@@ -1,0 +1,80 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+setwd("C:\\Users\\Educa informatica\\Desktop\\CIENCIAS DE DATOS\\R")
+```
+
+```{r}
+library(tidyverse)
+library(cluster)
+library(factoextra)
+```
+
+```{r}
+data(iris)
+```
+
+```{r}
+iris
+```
+```{r}
+iris_vars <- iris[1:4]
+iris_vars
+```
+```{r}
+pairs(iris_vars)
+```
+
+```{r}
+iris_escalado <- scale(iris_vars)
+```
+
+```{r}
+fviz_nbclust(iris_escalado, kmeans, method="wss") +
+  labs(subtitle="Metodo del codo")
+```
+
+```{r}
+k_means <- kmeans(iris_escalado, centers=3, nstart = 25)
+```
+
+```{r}
+plot(iris_escalado[, 1], iris_escalado[, 2], col=k_means$cluster, pch="", xlab="Sepal Length", ylab="Sepal Width")
+text(iris_escalado[, 1], iris_escalado[, 2], labels=k_means$cluster, cex=0.8, col=k_means$cluster)
+points(k_means$centers[, 1], k_means$centers[, 2], col=1:3, pch=16, cex=1)
+legend("topright", legend=c("Cluster 1", "Cluster 2", "Cluster 3"), col=1:3, pch=16)
+```
+
+```{r}
+fviz_cluster(k_means, data=iris_vars, geom="point", ellipse=TRUE, show.clust.cent = TRUE)
+```
+
+```{r}
+plot(iris_escalado[, 3], iris_escalado[, 4], col=k_means$cluster, pch="", xlab="Petal Length", ylab="Petal Width")
+text(iris_escalado[, 3], iris_escalado[, 4], labels = k_means$cluster, col=k_means$cluster, cex=0.8)
+points(k_means$centers[, 3], k_means$centers[, 4], pch=16, col=1:3 , cex=2)
+legend("topleft", legend=c("Cluster 1", "Cluster 2", "Cluster 3"), col=1:3, pch=16)
+```
+
+```{r}
+plot(iris_escalado[, 1], iris_escalado[, 3], pch="", col=k_means$cluster, xlab="Sepal Length", ylab="Petal Length")
+text(iris_escalado[, 1], iris_escalado[, 3], labels=k_means$cluster, col=k_means$cluster, cex=0.8)
+points(k_means$centers[, 1], k_means$centers[, 3], pch=16, cex=2, col=1:3)
+legend("bottomright", legend=c("Cluster 1", "Cluster 2", "Cluster 3"), pch=16, col=1:3)
+```
+
+```{r}
+aggregate(iris[, 1:4], by = list(cluster = k_means$cluster), FUN=mean)
+```
+
+```{r}
+ggplot(iris, aes(x=Species, fill=factor(k_means$cluster))) +
+  geom_bar(position="dodge") +
+  labs(x="Especie", fill= "Cluster")
+```
+```{r}
+fviz_silhouette(silhouette(k_means$cluster, dist(iris_escalado)))
+```
+

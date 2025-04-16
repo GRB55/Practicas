@@ -1,0 +1,366 @@
+---
+title: "REGRESIÓN LOGÍSTICA (CLASE)"
+output: html_notebook
+---
+
+```{r}
+# Cargar librerias
+library(tidyverse) # ETL
+library(caret) # Modelos
+library(plotly) # Graficos interactivos
+library(rattle) # Dataset del clima en australia
+
+data("weatherAUS")
+
+# Primera vista de los datos
+head(weatherAUS)
+```
+
+*Análisis Exploratorio*
+
+```{r}
+# Forma del dataset
+dim(weatherAUS)
+```
+```{r}
+# Columnas del dataset
+names(weatherAUS)
+```
+En la documentación del dataset dice que debemos eliminar "RISK_MM", por lo que lo hacemos de la siguiente manera:
+```{r}
+weatherAUS <- weatherAUS %>%
+  select(-RISK_MM)
+
+names(weatherAUS)
+```
+
+
+```{r}
+# Estructura del dataset
+str(weatherAUS)
+```
+
+```{r}
+# Resumen estadistico de columnas
+summary(weatherAUS)
+```
+
+```{r}
+# Valores nulos
+sum(is.na(weatherAUS))
+```
+```{r}
+# Valores nulos por columna
+colSums(is.na(weatherAUS))
+```
+```{r}
+# Valores de la columna date
+length(unique(weatherAUS$Date))
+```
+Vemos que DATE tiene alta cardinalidad, lo que puede ser un problema a la hora de modelar, por lo que la modificaremos.
+
+```{r}
+library(lubridate) # Cargamos lubridate para manejar fechas facilmente
+
+weatherAUS$Year <- year(weatherAUS$Date) # Año
+
+weatherAUS$Month <- month(weatherAUS$Date) # Mes
+
+weatherAUS$Day <- day(weatherAUS$Date) # Día
+
+head(weatherAUS) # Verificamos los cambios
+```
+```{r}
+# Eliminamos Date del dataset
+weatherAUS <- weatherAUS %>%
+  select(-Date)
+
+head(weatherAUS, 2)
+```
+
+```{r}
+# Variables categóricas
+categoricas <- c()
+for(i in 1:ncol(weatherAUS)){
+  if (is.character(weatherAUS[[i]]) || is.factor(weatherAUS[[i]])){
+    categoricas <- c(categoricas, names(weatherAUS)[i])
+  }
+}
+cat("Cantidad de columnas categóricas:", length(categoricas), "\n")
+cat("Columnas categóricas:", categoricas)
+```
+```{r}
+# Valores nulos de columnas categóricas
+colSums(is.na(weatherAUS[, categoricas]))
+```
+```{r}
+# Eliminamos los NA de la variable target
+weatherAUS <- drop_na(weatherAUS, RainTomorrow)
+
+weatherAUS
+```
+
+```{r}
+# Vistazo de como quedaron los NA
+colSums(is.na(weatherAUS[, categoricas]))
+```
+```{r}
+# Valores únicos de las columnas categóricas
+sapply(weatherAUS[, categoricas], unique)
+```
+
+```{r}
+# Cardinalidad de las demás columnas categóricas
+sapply(weatherAUS[, categoricas], function(x) length(unique(x)))
+```
+```{r}
+# Apariciones de cada valor único
+sapply(weatherAUS[, categoricas], table)
+```
+
+```{r}
+# Variables numéricas
+numericas <- c()
+for(i in 1:ncol(weatherAUS)){
+  if (is.numeric(weatherAUS[[i]])){
+    numericas <- c(numericas, names(weatherAUS)[i])
+  }
+}
+
+cat("Cantidad de columnas numéricas:", length(numericas), "\n")
+cat("Columnas numéricas:", numericas)
+```
+```{r}
+# Valores nulos de columnas numéricas
+colSums(is.na(weatherAUS[, numericas]))
+```
+```{r}
+# Analizar presencia de outliers
+weatherAUS %>%
+  pivot_longer(cols=numericas, names_to="caracteristica", values_to="valor") %>%
+  ggplot()+
+  aes(y=valor) +
+  geom_boxplot() +
+  facet_wrap(~caracteristica, scales="free_y") +
+  theme_bw()
+```
+Vemos que existen muchos outliers en las columnas Rainfall, Evaporation, WindGustSpeed, WindSpeed3pm, WindSpeed9am
+
+```{r}
+outliers <- c("Rainfall", "Evaporation", "WindGustSpeed", "WindSpeed3pm", "WindSpeed9am")
+# Analizar distribución de columnas con outliers
+weatherAUS %>%
+  select(outliers) %>%
+  gather(key="variable", value="valor") %>%
+  ggplot()+
+  aes(x=valor)+
+  geom_histogram(color="black", fill="red", bins=30) +
+  facet_wrap(~variable, scales="free_y") +
+  theme_bw()
+```
+Vemos que las distribuciones están sesgadas positivamente (cola larga a la derecha).
+Buscaremos outliers con el IQR.
+
+```{r}
+# Outliers en Rainfall
+quantiles <- quantile(weatherAUS$Rainfall, c(0.25, 0.75), na.rm=T)
+iqr <- IQR(weatherAUS$Rainfall, na.rm=T)
+limite_inf <- quantiles[1] - iqr * 1.5
+limite_sup <- quantiles[2] + iqr * 1.5
+print(limite_inf)
+print(limite_sup)
+print(min(weatherAUS$Rainfall, na.rm=T))
+print(max(weatherAUS$Rainfall, na.rm=T))
+```
+Para la columna "Rainfall" los valores menores a -0.9 y mayores a 1.5 son outliers.
+El minimo de columna es 0 y el maximo es 474 por lo que los outliers son los valores mayores a 1.5.
+
+```{r}
+# Outliers en Evaporation
+quantiles <- quantile(weatherAUS$Evaporation, c(0.25, 0.75), na.rm=T)
+iqr <- IQR(weatherAUS$Evaporation, na.rm=T)
+limite_inf <- quantiles[1] - iqr * 1.5
+limite_sup <- quantiles[2] + iqr * 1.5
+print(limite_inf)
+print(limite_sup)
+print(min(weatherAUS$Evaporation, na.rm=T))
+print(max(weatherAUS$Evaporation, na.rm=T))
+```
+Para la columna "Evaporation" observamos que los valores menores a -4.35 y mayores a 14.45 son outliers. Como el minimo de columna es 0, los outliers son los valores mayores a 14.45.
+
+```{r}
+# Outliers en WindGustSpeed
+quantiles <- quantile(weatherAUS$WindGustSpeed, c(0.25, 0.75), na.rm=T)
+iqr <- IQR(weatherAUS$WindGustSpeed, na.rm=T)
+limite_inf <- quantiles[1] - iqr * 1.5
+limite_sup <- quantiles[2] + iqr * 1.5
+print(limite_inf)
+print(limite_sup)
+print(min(weatherAUS$WindGustSpeed, na.rm=T))
+print(max(weatherAUS$WindGustSpeed, na.rm=T))
+```
+Para la columna "WindGustSpeed" observamos que los valores menores a 5.5 y mayores a 73.5 son outliers. Siendo el minimo 2 y el maximo 135, observamos que hay outliers inferiores a 5.5 y superiores a 73.5.
+
+```{r}
+# Outliers en WindSpeed3pm
+quantiles <- quantile(weatherAUS$WindSpeed3pm, c(0.25, 0.75), na.rm=T)
+iqr <- IQR(weatherAUS$WindSpeed3pm, na.rm=T)
+limite_inf <- quantiles[1] - iqr * 1.5
+limite_sup <- quantiles[2] + iqr * 1.5
+print(limite_inf)
+print(limite_sup)
+print(min(weatherAUS$WindSpeed3pm, na.rm=T))
+print(max(weatherAUS$WindSpeed3pm, na.rm=T))
+```
+Para la columna "WindSpeed3pm" observamos que los valores menores a -3.5 y mayores a 40.5 son outliers. Siendo el minimo 0 y el maximo 87, observamos que los outliers son los valores mayores a 40.5.
+
+```{r}
+# Outliers en WindSpeed9am
+quantiles <- quantile(weatherAUS$WindSpeed9am, c(0.25, 0.75), na.rm=T)
+iqr <- IQR(weatherAUS$WindSpeed9am, na.rm=T)
+limite_inf <- quantiles[1] - iqr * 1.5
+limite_sup <- quantiles[2] + iqr * 1.5
+print(limite_inf)
+print(limite_sup)
+print(min(weatherAUS$WindSpeed9am, na.rm=T))
+print(max(weatherAUS$WindSpeed9am, na.rm=T))
+```
+Para la columna "WindSpeed9am" observamos que los valores menores a -11 y mayores a 37 son outliers. Siendo el minimo 0 y el maximo 87, observamos que los outliers son los valores mayores a 37.
+
+```{r}
+# Features y target
+X <- weatherAUS %>%
+  select(-RainTomorrow)
+
+y <- weatherAUS$RainTomorrow
+
+```
+
+Como hay outliers imputaremos los NA con la mediana para las variables numericas y con la moda para las variables categoricas/factores.
+```{r}
+library(DescTools) # Usar función Mode
+X <- X %>%
+  mutate(across(where(is.numeric), ~ifelse(is.na(.), median(., na.rm=T), .))) %>%
+  mutate(across(where(is.factor), ~ifelse(is.na(.), Mode(., na.rm=T), .)))
+# Chequeamos que todo funcione
+colSums(is.na(X))
+```
+
+
+```{r}
+# Train y test sets
+indice <- createDataPartition(y, p=0.7, list=F)
+
+X_train <- X[indice, ]
+y_train <- y[indice]
+X_test <- X[-indice, ]
+y_test <- y[-indice]
+```
+
+*Feature Engineering*
+
+```{r}
+print(dim(X_train))
+print(dim(X_test))
+print(sum(is.na(X_train)))
+print(sum(is.na(X_test)))
+```
+```{r}
+valor_maximo <- function(df, variable, top) {
+  df[[variable]] <- pmin(df[[variable]], top, na.rm=T)
+  return(df)
+}
+
+for (df1 in c("X_train", "X_test")) {
+  assign(df1, valor_maximo(get(df1), "Rainfall", 1.5))
+  assign(df1, valor_maximo(get(df1), "Evaporation", 14.45))
+  assign(df1, valor_maximo(get(df1), "WindGustSpeed", 73.5))
+  assign(df1, valor_maximo(get(df1), "WindSpeed9am", 37))
+  assign(df1, valor_maximo(get(df1), "WindSpeed3pm", 40.5))
+}
+
+head(X_train)
+head(X_test)
+```
+```{r}
+# Encodificar las variables categoricas/factores
+library(mltools)
+library(data.table)
+X_train$Location <- factor(X_train$Location)
+X_test$Location <- factor(X_test$Location)
+
+X_train <- as.data.table(X_train)
+
+X_train <- one_hot(X_train)
+
+X_test <- as.data.table(X_test)
+
+X_test <- one_hot(X_test)
+
+head(X_train)
+head(X_test)
+```
+
+
+```{r}
+# Escalar los datos
+preprocesar <- preProcess(X_train, method="range")
+X_train <- predict(preprocesar, X_train)
+X_test <- predict(preprocesar, X_test)
+```
+
+```{r}
+y_train <- factor(y_train)
+set.seed(123)
+control <- trainControl(method="cv", number=10)
+modelo_lr <- train(x=X_train,
+                   y=y_train,
+                   method="glm",
+                   family=binomial(),
+                   trControl=control)
+```
+
+```{r}
+pred_lr <- predict(modelo_lr, newdata=X_test)
+
+conf_mat <- confusionMatrix(pred_lr, as.factor(y_test), positive="Yes")
+
+conf_mat
+```
+
+```{r}
+mat_data <- as.data.frame(conf_mat$table)
+
+mat_data %>%
+  ggplot() +
+  aes(x=Prediction, y=Reference, fill=Freq) +
+  geom_tile() +
+  geom_text(aes(label=Freq), color="white", size=5) +
+  scale_fill_gradient(low="skyblue", high="blue4") +
+  labs(title="Matriz de confusión") +
+  theme_bw()
+```
+```{r}
+# Overfitting?
+
+cat("Training set score:", sum(predict(modelo_lr, X_train) == y_train) / length(y_train), "\n")
+cat("Test set score:", sum(predict(modelo_lr, X_test) == y_test) / length(y_test))
+```
+```{r}
+# F1 SCORE
+conf_mat$byClass["F1"]
+```
+
+
+```{r}
+# ROC y AUC
+library(pROC)
+probabilidades <- predict(modelo_lr, X_test, type="prob")
+roc_curve <- roc(as.numeric(y_test), as.numeric(probabilidades[,2]))
+plot(roc_curve, col = "blue", main = "Curva ROC")
+auc(roc_curve)
+```
+Vemos que el accuracy es de 85% por lo que nuestro modelo predictivo funciona bien.
+No observamos diferencia significativa entre el set de entrenamiento y el set de prueba por lo que no hay signos de overfitting.
+El AUC es de 0.87 por lo que nuestro modelo tiene un buen nivel de predicción.
+En cuanto al f1 score tiene un valor de 0.6, no es malo pero hay lugar para mejora.

@@ -1,0 +1,230 @@
+---
+title: "Support Vector Machine"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(e1071)
+library(caret)
+library(plotly)
+```
+
+```{r}
+# Cargamos los datos de BreastCancer de la libreria mlbench
+library(mlbench)
+
+data(BreastCancer)
+
+BreastCancer
+```
+
+```{r}
+# Dimensiones del dataset
+dim(BreastCancer)
+```
+```{r}
+# Estructura del dataset
+str(BreastCancer)
+```
+```{r}
+# Eliminaremos Id del dataset ya que no aporta valor
+breast <- BreastCancer %>%
+  select(-Id)
+
+head(breast)
+```
+```{r}
+# Estadisticas del dataset
+summary(breast)
+```
+```{r}
+# Analicemos los NAs que hay
+breast %>%
+  filter(is.na(Bare.nuclei))
+```
+
+```{r}
+# Valores de Bare.nuclei para clase maligna
+breast %>%
+  filter(Class == "malignant") %>%
+  group_by(Bare.nuclei) %>%
+  summarize(count=n())
+```
+```{r}
+# Valores de Bare.nuclei para clase benigna
+breast %>%
+  filter(Class == "benign") %>%
+  group_by(Bare.nuclei) %>%
+  summarize(count=n())
+```
+```{r}
+# Donde la clase es benigna imputaremos los NA con 1 y donde es maligna con 10
+breast <- breast %>%
+  mutate(Bare.nuclei = ifelse((is.na(Bare.nuclei) & Class == "malignant"), 10, 1))
+
+breast$Bare.nuclei <- factor(breast$Bare.nuclei)
+```
+
+```{r}
+ordered_factors <- names(breast)[1:5]
+factors <- names(breast)[6:9]
+
+breast %>%
+  pivot_longer(cols=ordered_factors, names_to="caracteristica", values_to="valor") %>%
+  ggplot(aes(x=Class, y=valor, fill=Class)) +
+  geom_col(position="dodge",show.legend=F)+
+  facet_wrap(~caracteristica, scales="free", ncol=5)+
+  labs(title="Distribución de las columnas con orden de factores por clase")+
+  theme_bw()
+```
+```{r}
+breast %>%
+  pivot_longer(cols=factors, names_to="caracteristica", values_to="valor") %>%
+  ggplot(aes(x=Class, y=valor, fill=Class)) +
+  geom_col(position="dodge",show.legend=F)+
+  facet_wrap(~caracteristica, scales="free", ncol=5)+
+  labs(title="Distribución de las columnas con orden de factores por clase")+
+  theme_bw()
+```
+```{r}
+# Distribución de la variable target
+prop.table(table(breast$Class))
+```
+```{r}
+ggplot(breast) +
+  aes(x=Class, fill=Class) +
+  geom_histogram(stat="count", show.legend=F)+
+  labs(title="Distribución de la variable target")
+```
+```{r}
+# One hot encoding
+breast_encoded <- model.matrix(~ . - 1, data=breast)
+breast_encoded <- as.data.frame(breast_encoded)
+breast_encoded
+```
+
+
+```{r}
+# Modelamos con el df encodeado
+set.seed(123)
+X_encoded <- breast_encoded %>%
+  select(-Classmalignant)
+y_encoded <- factor(breast_encoded$Classmalignant)
+
+indice_encoded <- createDataPartition(y, p=0.7, list=F)
+X_train <- X_encoded[indice_encoded, ]
+X_test <- X_encoded[-indice_encoded, ]
+y_train <- y_encoded[indice_encoded]
+y_test <- y_encoded[-indice_encoded]
+
+
+svm <- svm(x=X_train, y=y_train)
+pred <- predict(svm, X_test)
+confusionMatrix(pred, y_test, positive="1")
+```
+```{r}
+breast_encoded$Classmalignant <- factor(breast_encoded$Classmalignant)
+control <- trainControl(method="cv", number=5)
+modelo <- train(Classmalignant ~ .,
+                data=breast_encoded,
+                method="svmRadial",
+                trControl=control)
+
+print(modelo)
+print(modelo$results)
+```
+```{r}
+modelo_opt <- train(Classmalignant ~ .,
+                    data=breast_encoded,
+                    method="svmRadial",
+                    trControl=control,
+                    tuneGrid=expand.grid(C=1.00, sigma=0.01710322))
+pred_opt_cv <- predict(modelo_opt, breast_encoded)
+conf_matrix <- confusionMatrix(pred_opt_cv, breast_encoded$Classmalignant, positive="1")
+conf_matrix
+```
+```{r}
+matrix_data <- as.data.frame(conf_matrix$table)
+
+matrix_data
+```
+```{r}
+ggplot(matrix_data, aes(x=Prediction, y=Reference, fill=Freq))+
+  geom_tile()+
+  geom_text(aes(label=Freq), color="white", size=5)+
+  scale_fill_gradient(low="blue", high="red")+
+  labs(title="Matriz de confusión")+
+  theme_bw() +
+  theme(plot.title=element_text(hjust=0.5))
+```
+
+
+```{r}
+# Hay overfitting?
+train_accuracy <- sum(predict(svm, X_train) == y_train) / length(y_train)
+test_accuracy <- sum(predict(svm, X_test) == y_test) / length(y_test)
+
+cat("Accuracy en entrenamiento:", train_accuracy, "\n")
+cat("Accuracy en prueba:", test_accuracy, "\n")
+```
+
+```{r}
+# Random forest para ver las variables mas importantes
+library(randomForest)
+rf <- randomForest(Class ~ ., data=breast)
+
+importance(rf)
+```
+```{r}
+# Df con las columans mas relevantes
+breast_filtrado <- breast %>%
+  select(c(Cell.size, Cell.shape, Bl.cromatin, Normal.nucleoli, Epith.c.size, Class))
+
+breast_filtrado
+```
+```{r}
+# Aplicamos onehotencoding al df filtrado
+breast_filtrado_encoded = model.matrix(~ . - 1, data=breast_filtrado)
+breast_filtrado_encoded = as.data.frame(breast_filtrado_encoded)
+breast_filtrado_encoded
+```
+```{r}
+set.seed(321)
+X <- breast_filtrado_encoded %>%
+  select(-Classmalignant)
+y <- factor(breast_filtrado_encoded$Classmalignant)
+
+indice_filt_enc <- createDataPartition(y, p=0.7, list=F)
+X_train_filt <- X[indice_filt_enc, ]
+X_test_filt <- X[-indice_filt_enc, ]
+y_train_filt <- y[indice_filt_enc]
+y_test_filt <- y[-indice_filt_enc]
+
+svm_filt <- svm(x=X_train_filt, y=y_train_filt)
+pred_filt <- predict(svm_filt, X_test_filt)
+confusionMatrix(pred_filt, y_test_filt, positive="1")
+```
+```{r}
+breast_filtrado_encoded$Classmalignant <- factor(breast_filtrado_encoded$Classmalignant)
+modelo_filtrado <- train(Classmalignant ~ .,
+                         data=breast_filtrado_encoded,
+                         method="svmRadial",
+                         trControl=control)
+
+print(modelo_filtrado)
+print(modelo_filtrado$results)
+```
+```{r}
+modelo_filt_opt <- train(Classmalignant ~ .,
+                         data=breast_filtrado_encoded,
+                         method="svmRadial",
+                         trControl=control,
+                         tuneGrid=expand.grid(C=0.50, sigma=0.0249757))
+pred_filt_opt <- predict(modelo_filt_opt, breast_filtrado_encoded)
+confusionMatrix(pred_filt_opt, breast_filtrado_encoded$Classmalignant, positive="1")
+```
+1- Vemos que el modelo de SVM obtenido luego de aplicar ONEHOTENCODING a nuestros datos con todas las variables, nos da un accuracy del 96%, un resultado muy positivo.
+2- Cuando aplicamos validación cruzada para tratar de mejorar nuestro modelo, obtenemos un resultado sumamente importante en cuanto a accuracy, que es del 99.71%, y sobre 241 muestras de tumores malignos predijo que 240 eran en efecto malignos, dato sumamente importante ya que hay un solo error de tipo II (minimizar los errores de tipo II en situación clínica se traduce en vidas salvadas).
+3- Comparamos el accuracy de entrenamiento y testeo obteniendo una diferencia del 3%, por lo que no hay overfitting significativo.
+4- Utilizamos random forest para seleccionar las variables importantes y ver si el modelo puede llegar a mejorarse. Si bien es mas sencillo de entender, de entrada el modelo solo con las 5 variables mas importantes nos da un accuracy del 93%, menor al 96% que tuvimos en la entrada anterior, por lo que las variables adicionales aportan info relevante.
+5- Aplicando validación cruzada obtenemos un 97% de accuracy, por lo que cuando tenemos todas las variables predecimos mucho mejor la variable target.
