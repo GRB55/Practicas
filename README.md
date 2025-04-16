@@ -1,4 +1,4 @@
-# Repositorio Gonzalo Rios Barcelo
+# Repositorio de prácticas Gonzalo Rios Barcelo
 ¡Bienvenidos a mi pequeño repositorio!
 Mi nombre es Gonzalo Ríos Barceló, y soy estudiante de Ciencias de Datos.
 En él dejaré plasmadas algunas cuestiones que fui aprendiendo y algunas practicas de los conceptos vistos, a lo largo de mis años como estudiante.
