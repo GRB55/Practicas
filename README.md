@@ -1,4 +1,4 @@
-# Bienvenida al Repositorio de Prácticas
+# Repositorio de Prácticas
 
 ## ¡Bienvenidos!
 
