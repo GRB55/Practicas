@@ -1,4 +1,4 @@
-# ¡Proyectos en SQL! 🛠️
+# ¡Bienvenidos a la sección en SQL! 🛠️
 
 Este repositorio contiene una serie de prácticas diseñadas para desarrollar y mejorar habilidades en SQL, cubriendo desde exploración de datos hasta la creación de bases de datos y procedimientos almacenados. Cada práctica aborda aspectos esenciales del manejo de bases de datos con SQL.
 
