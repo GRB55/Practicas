@@ -6,13 +6,13 @@ Aquí encontrarás una colección de proyectos y prácticas que reflejan mi prog
 
 ### Análisis de Salarios en el Sector de Datos
 
-- Archivo: Data Jobs.pbix
+- **Archivo**: Data Jobs.pbix
 
-- Herramientas: Modelado y visualizaciones en Power BI.
+- **Herramientas**: Modelado y visualizaciones en Power BI.
 
-- Descripción: Este tablero analiza los salarios en diferentes roles del sector de datos.
+- **Descripción**: Este tablero analiza los salarios en diferentes roles del sector de datos.
 
-- Incluye:
+- **Incluye**:
 
   - Comparación de remuneraciones entre diferentes niveles de experiencia.
 
@@ -22,13 +22,13 @@ Aquí encontrarás una colección de proyectos y prácticas que reflejan mi prog
 
 ### Análisis de Netflix
 
-- Archivo: Netflix.pbix
+- **Archivo**: Netflix.pbix
 
-- Herramientas: Visualizaciones en Power BI.
+- **Herramientas**: Visualizaciones en Power BI.
 
-- Descripción: Exploración del contenido de la plataforma de streaming Netflix.
+- **Descripción**: Exploración del contenido de la plataforma de streaming Netflix.
 
-- Incluye:
+- **Incluye**:
 
   - Distribución del contenido por géneros y países.
 
@@ -38,13 +38,13 @@ Aquí encontrarás una colección de proyectos y prácticas que reflejan mi prog
 
 ### Primer Tablero
 
-- Archivo: Primer Tablero.pbix
+- **Archivo**: Primer Tablero.pbix
 
-- Herramientas: Introducción a las funcionalidades de Power BI.
+- **Herramientas**: Introducción a las funcionalidades de Power BI.
 
-- Descripción: Mi primer proyecto en Power BI, con el que aprendí las bases de la herramienta.
+- **Descripción**: Mi primer proyecto en Power BI, con el que aprendí las bases de la herramienta.
 
-- Incluye:
+- **Incluye**:
 
   - Creación de visualizaciones simples.
 
