@@ -12,11 +12,13 @@ Este repositorio reúne una colección de proyectos y prácticas que reflejan mi
 
 - **Power BI**
 
+- **Tableau**
+
 Mi objetivo es compartir este camino de aprendizaje y mostrar las habilidades que he desarrollado en el proceso. ¡Espero que encuentres este contenido interesante y valioso!
 
 ### Próximos Pasos
 
-- Continuar ampliando los proyectos en Power BI.
+- Continuar ampliando los proyectos en Power BI y Tableau.
 
 - Incorporar técnicas avanzadas de Machine Learning y visualizaciones interactivas.
 
